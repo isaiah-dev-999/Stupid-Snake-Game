@@ -71,7 +71,6 @@ If a power-up is active, a notification will appear at the bottom of the screen 
 Below are some additional features that could further enhance the gameplay:
 - **Additional Power-Ups**: New power-ups such as invincibility or food multipliers for added variety.
 - **Maze Walls**: Add obstacles to create mazes and additional challenges.
-- **Leaderboard**: Record and display top scores in each mode for a competitive edge.
 
 ## Contributing
 Contributions are welcome! If you'd like to contribute, feel free to fork the project, make your changes, and submit a pull request. For major changes, open an issue first to discuss what you would like to change.
