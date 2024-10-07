@@ -1,8 +1,10 @@
-Sure thing! Here’s the complete README for your GitHub project:
+No problem! I’ll add a section at the top to indicate that it’s a **Work in Progress (WIP)**. Here’s the updated README:
 
 ---
 
-# Snake Game 🐍
+# Snake Game 🐍 (Work in Progress)
+
+> **Note**: This project is a work in progress. Some features are still being developed, and the game is actively being improved.
 
 A classic Snake game built in Python with Pygame, featuring multiple modes, power-ups, and debugging options. This project is perfect for coding enthusiasts and gamers looking to enjoy or expand upon a well-known game.
 
@@ -67,3 +69,5 @@ Below are some additional features that could further enhance the gameplay:
 Contributions are welcome! If you'd like to contribute, feel free to fork the project, make your changes, and submit a pull request. For major changes, open an issue first to discuss what you would like to change.
 
 ---
+
+This README should clearly indicate that the game is under active development. Let me know if you’d like any more adjustments!
