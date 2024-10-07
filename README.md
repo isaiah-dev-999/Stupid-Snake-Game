@@ -1,5 +1,4 @@
 
-
 ---
 
 # Snake Game 🐍 (Work in Progress)
@@ -14,6 +13,7 @@ A classic Snake game built in Python with Pygame, featuring multiple modes, powe
 - [Installation](#installation)
 - [Usage](#usage)
 - [Controls](#controls)
+- [Power-Up Toggles](#power-up-toggles)
 - [Future Ideas](#future-ideas)
 - [Contributing](#contributing)
 
@@ -24,6 +24,8 @@ A classic Snake game built in Python with Pygame, featuring multiple modes, powe
 - **Endless Mode**: Play infinitely! Collisions reduce the snake’s length rather than ending the game, making it a survival challenge.
 - **Debugging Mode**: Track essential game data such as the snake's coordinates, food position, and reverse-control state, making it ideal for testing and fine-tuning.
 - **Reverse Control Power-Up**: Randomly appearing items that temporarily reverse controls, adding an exciting twist to the gameplay.
+- **Speed Power-Up**: Boost or reduce the snake’s speed with randomly appearing power-ups.
+- **Larger Screen**: The game screen size is now set to 800x600 for more room to navigate.
 
 ## Game Modes
 1. **Normal Mode**: Traditional snake gameplay where the game ends upon hitting the screen boundary or colliding with the snake itself.
@@ -58,15 +60,20 @@ python main_game.py
 - **W, A, S, D**: Move the snake up, left, down, and right respectively.
 - **Escape**: Exits to the main menu when in Endless Mode, allowing you to select another game mode.
 
+## Power-Up Toggles
+At the start of the game, you can toggle power-ups on or off:
+- **Press T**: Toggles Speed Power-Ups (boost or slowdown).
+- **Press R**: Toggles Reverse Control Power-Ups.
+
+If a power-up is active, a notification will appear at the bottom of the screen when you consume it, indicating its effect.
+
 ## Future Ideas
 Below are some additional features that could further enhance the gameplay:
-- **Speed Power-Ups**: Temporarily increase or decrease the snake’s speed.
+- **Additional Power-Ups**: New power-ups such as invincibility or food multipliers for added variety.
 - **Maze Walls**: Add obstacles to create mazes and additional challenges.
-- **Leaderboard**: Record and display top scores in each mode for a competitive edge. I don't know about this right now
-- **Power-Up Variety**: Additional power-ups like invincibility, temporary slow-downs, or food multipliers.
+- **Leaderboard**: Record and display top scores in each mode for a competitive edge.
 
 ## Contributing
 Contributions are welcome! If you'd like to contribute, feel free to fork the project, make your changes, and submit a pull request. For major changes, open an issue first to discuss what you would like to change.
 
 ---
-
