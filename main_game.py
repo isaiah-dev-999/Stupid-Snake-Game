@@ -186,10 +186,10 @@ def gameLoop():
             if event.type == pygame.QUIT:
                 game_over = True
             elif event.type == pygame.KEYDOWN:
-                # Escape key to exit Endless Mode
+                # Escape key to return to mode selector in Endless Mode
                 if event.key == pygame.K_ESCAPE and ENDLESS_MODE:
-                    print("Exiting Endless Mode")  # Debug print
-                    game_over = True
+                    print("Returning to Mode Selector from Endless Mode")  # Debug print
+                    return  # Ends the current game and goes back to mode selector
                 # WASD controls, reversed if reverse_controls is True
                 elif event.key == pygame.K_a and x1_change == 0:
                     x1_change, y1_change = (-snake_block, 0) if not reverse_controls else (snake_block, 0)
@@ -216,7 +216,7 @@ def gameLoop():
         # Display exit message in Endless Mode
         if ENDLESS_MODE:
             exit_message_font = pygame.font.SysFont(None, 20)
-            dis.blit(exit_message_font.render("Press ESC to exit Endless Mode", True, YELLOW), [10, dis_height - 30])
+            dis.blit(exit_message_font.render("Press ESC to return to mode selection", True, YELLOW), [10, dis_height - 30])
 
         # Draw regular food
         pygame.draw.rect(dis, GREEN, [foodx, foody, snake_block, snake_block])
@@ -260,9 +260,12 @@ def gameLoop():
 
     # Update high score at the end
     update_high_score(Length_of_snake - 1)
-    pygame.quit()
-    quit()
 
-# Set modes only once and start the game
-mode_selector()
-gameLoop()  # Start the game in the selected modes
+# Main loop to keep returning to mode selector
+while True:
+    mode_selector()
+    gameLoop()
+
+# Final quit call only if the main loop exits
+pygame.quit()
+quit()
