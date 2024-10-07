@@ -62,7 +62,7 @@ python main_game.py
 Below are some additional features that could further enhance the gameplay:
 - **Speed Power-Ups**: Temporarily increase or decrease the snake’s speed.
 - **Maze Walls**: Add obstacles to create mazes and additional challenges.
-- **Leaderboard**: Record and display top scores in each mode for a competitive edge.
+- **Leaderboard**: Record and display top scores in each mode for a competitive edge. I don't know about this right now
 - **Power-Up Variety**: Additional power-ups like invincibility, temporary slow-downs, or food multipliers.
 
 ## Contributing
