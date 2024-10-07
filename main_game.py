@@ -10,14 +10,15 @@ pygame.init()
 WHITE = (255, 255, 255)
 YELLOW = (255, 255, 102)
 BLACK = (0, 0, 0)
-RED = (213, 50, 80)
-GREEN = (0, 255, 0)
-BLUE = (50, 153, 213)
-PURPLE = (150, 0, 255)  # Color for reverse power-up
+RED = (213, 50, 80)     # Speed Boost Power-Up
+GREEN = (0, 255, 0)     # Regular Food
+BLUE = (50, 153, 213)   # Background
+PURPLE = (150, 0, 255)  # Reverse Control Power-Up
+CYAN = (0, 255, 255)    # Speed Slowdown Power-Up
 
 # Game Display Dimensions
-dis_width = 600
-dis_height = 400
+dis_width = 800  # Updated screen width
+dis_height = 600  # Updated screen height
 dis = pygame.display.set_mode((dis_width, dis_height))
 pygame.display.set_caption('Snake Game')
 
@@ -25,11 +26,24 @@ pygame.display.set_caption('Snake Game')
 clock = pygame.time.Clock()
 snake_block = 10
 snake_speed = 15
+default_snake_speed = 15
 reverse_controls = False
 reverse_duration = 5  # Duration in seconds for reversed controls
 reverse_start_time = None
 reverse_powerup_interval = 20  # Power-up appears every 20 seconds
 last_reverse_spawn_time = time.time()
+
+# Power-Up Variables
+speed_powerup_interval = 15  # Speed power-up appears every 15 seconds
+last_speed_powerup_spawn_time = time.time()
+speed_effect_duration = 5  # Speed effect lasts 5 seconds
+speed_effect_start_time = None
+speed_boost_active = False
+speed_slowdown_active = False
+
+# Power-Up Settings
+ENABLE_SPEED_POWERUPS = True
+ENABLE_REVERSE_CONTROLS = True  # Toggle for reverse controls
 
 # Fonts for game messages
 font_style = pygame.font.SysFont(None, 35)
@@ -55,6 +69,14 @@ def display_high_score(score):
     text_rect = value.get_rect()
     dis.blit(value, [dis_width - text_rect.width - 10, 10])  # Top-right corner padding
 
+def display_notification(text):
+    """
+    Displays a temporary notification at the bottom of the screen.
+    """
+    notification_font = pygame.font.SysFont(None, 20)
+    text_surface = notification_font.render(text, True, YELLOW)
+    dis.blit(text_surface, [10, dis_height - 30])
+
 # High Score Management Functions
 def retrieve_high_score():
     if not os.path.exists("high_score.txt"):
@@ -74,19 +96,24 @@ def update_high_score(score):
 def mode_selector():
     """
     Displays a start menu to select the mode: Normal, Endless, or Debug with a choice.
+    Allows toggling speed power-ups and reverse control power-ups on or off.
     """
-    global DEBUG_MODE, ENDLESS_MODE
+    global DEBUG_MODE, ENDLESS_MODE, ENABLE_SPEED_POWERUPS, ENABLE_REVERSE_CONTROLS
     while True:
         dis.fill(BLUE)
         message("Select Mode", WHITE, -50)
         message("Press N for Normal Mode", YELLOW, 0)
         message("Press E for Endless Mode", YELLOW, 50)
         message("Press D for Debug Mode", YELLOW, 100)
+        message(f"Press T to Toggle Speed Power-Ups: {'On' if ENABLE_SPEED_POWERUPS else 'Off'}", CYAN, 150)
+        message(f"Press R to Toggle Reverse Control Power-Ups: {'On' if ENABLE_REVERSE_CONTROLS else 'Off'}", PURPLE, 200)
 
         # Add legend for colors on the right side
         color_legend_font = pygame.font.SysFont(None, 20)
-        dis.blit(color_legend_font.render("Green: Regular Food", True, GREEN), [dis_width - 180, dis_height / 2 - 40])
-        dis.blit(color_legend_font.render("Purple: Reverse Controls", True, PURPLE), [dis_width - 180, dis_height / 2])
+        dis.blit(color_legend_font.render("Green: Regular Food", True, GREEN), [dis_width - 180, dis_height / 2 - 60])
+        dis.blit(color_legend_font.render("Purple: Reverse Controls", True, PURPLE), [dis_width - 180, dis_height / 2 - 30])
+        dis.blit(color_legend_font.render("Red: Speed Boost", True, RED), [dis_width - 180, dis_height / 2])
+        dis.blit(color_legend_font.render("Cyan: Speed Slowdown", True, CYAN), [dis_width - 180, dis_height / 2 + 30])
 
         pygame.display.update()
 
@@ -105,7 +132,6 @@ def mode_selector():
                     return
                 elif event.key == pygame.K_d:
                     DEBUG_MODE = True
-                    # Prompt for Normal or Endless within Debug Mode
                     dis.fill(BLUE)
                     message("Debug Mode Selected", WHITE, -50)
                     message("Press N for Normal Mode", YELLOW, 0)
@@ -125,7 +151,14 @@ def mode_selector():
                                     ENDLESS_MODE = True
                                     selecting_debug_mode = False
                     return
+                elif event.key == pygame.K_t:
+                    # Toggle speed power-ups on/off
+                    ENABLE_SPEED_POWERUPS = not ENABLE_SPEED_POWERUPS
+                elif event.key == pygame.K_r:
+                    # Toggle reverse control power-ups on/off
+                    ENABLE_REVERSE_CONTROLS = not ENABLE_REVERSE_CONTROLS
 
+# Function to generate random positions for food and power-ups
 def spawn_item():
     """
     Generates a random position for food or power-up within safe screen boundaries.
@@ -134,9 +167,24 @@ def spawn_item():
     y = round(random.randrange(snake_block, dis_height - snake_block * 2) / snake_block) * snake_block
     return x, y
 
+def spawn_speed_powerup_in_front(x, y, x_change, y_change):
+    """
+    Spawns a speed power-up a few blocks ahead of the snake's current position.
+    """
+    steps_ahead = 3  # Adjust this to set how far in front the power-up should spawn
+    powerup_x = x + (x_change * steps_ahead)
+    powerup_y = y + (y_change * steps_ahead)
+    
+    # Ensure the power-up is within screen bounds
+    if 0 <= powerup_x < dis_width and 0 <= powerup_y < dis_height:
+        return powerup_x, powerup_y
+    else:
+        return spawn_item()  # Fallback to a random position if out of bounds
+
 # Main game loop with modes as arguments
 def gameLoop():
     global reverse_controls, reverse_start_time, last_reverse_spawn_time
+    global last_speed_powerup_spawn_time, speed_effect_start_time, speed_boost_active, speed_slowdown_active, snake_speed
 
     high_score = retrieve_high_score()  # Get high score at the start
     game_over = False
@@ -151,8 +199,12 @@ def gameLoop():
     # Food position generation
     foodx, foody = spawn_item()
 
-    # Reverse power-up initial position (hidden at first)
+    # Reverse power-up and speed power-up initial positions
     reverse_foodx, reverse_foody = None, None
+    speed_powerupx, speed_powerupy = None, None
+    speed_type = None
+
+    notification_text = None  # For displaying speed power-up notifications
 
     while not game_over:
 
@@ -177,27 +229,36 @@ def gameLoop():
         if reverse_controls and time.time() - reverse_start_time > reverse_duration:
             reverse_controls = False  # End reverse controls
 
-        # Spawn reverse power-up every `reverse_powerup_interval` seconds
-        if time.time() - last_reverse_spawn_time > reverse_powerup_interval:
+        # Spawn reverse power-up every `reverse_powerup_interval` seconds if enabled
+        if ENABLE_REVERSE_CONTROLS and time.time() - last_reverse_spawn_time > reverse_powerup_interval:
             reverse_foodx, reverse_foody = spawn_item()
             last_reverse_spawn_time = time.time()
+
+        # Spawn speed power-up every `speed_powerup_interval` seconds if enabled
+        if ENABLE_SPEED_POWERUPS and time.time() - last_speed_powerup_spawn_time > speed_powerup_interval:
+            speed_powerupx, speed_powerupy = spawn_speed_powerup_in_front(x1, y1, x1_change, y1_change)
+            speed_type = random.choice(["boost", "slowdown"])
+            last_speed_powerup_spawn_time = time.time()
+
+        # End speed effect after duration
+        if (speed_boost_active or speed_slowdown_active) and time.time() - speed_effect_start_time > speed_effect_duration:
+            snake_speed = default_snake_speed  # Reset speed to default
+            speed_boost_active = False
+            speed_slowdown_active = False
+            notification_text = None  # Clear notification
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 game_over = True
             elif event.type == pygame.KEYDOWN:
-                # Escape key to return to mode selector in Endless Mode
-                if event.key == pygame.K_ESCAPE and ENDLESS_MODE:
-                    print("Returning to Mode Selector from Endless Mode")  # Debug print
-                    return  # Ends the current game and goes back to mode selector
                 # WASD controls, reversed if reverse_controls is True
-                elif event.key == pygame.K_a and x1_change == 0:
+                if (event.key == pygame.K_a and x1_change == 0):
                     x1_change, y1_change = (-snake_block, 0) if not reverse_controls else (snake_block, 0)
-                elif event.key == pygame.K_d and x1_change == 0:
+                elif (event.key == pygame.K_d and x1_change == 0):
                     x1_change, y1_change = (snake_block, 0) if not reverse_controls else (-snake_block, 0)
-                elif event.key == pygame.K_w and y1_change == 0:
+                elif (event.key == pygame.K_w and y1_change == 0):
                     x1_change, y1_change = (0, -snake_block) if not reverse_controls else (0, snake_block)
-                elif event.key == pygame.K_s and y1_change == 0:
+                elif (event.key == pygame.K_s and y1_change == 0):
                     x1_change, y1_change = (0, snake_block) if not reverse_controls else (0, -snake_block)
 
         # Update snake position and check boundaries
@@ -213,23 +274,51 @@ def gameLoop():
 
         dis.fill(BLUE)
 
-        # Display exit message in Endless Mode
-        if ENDLESS_MODE:
-            exit_message_font = pygame.font.SysFont(None, 20)
-            dis.blit(exit_message_font.render("Press ESC to return to mode selection", True, YELLOW), [10, dis_height - 30])
-
         # Draw regular food
         pygame.draw.rect(dis, GREEN, [foodx, foody, snake_block, snake_block])
 
-        # Draw reverse power-up if it's on the screen
-        if reverse_foodx is not None and reverse_foody is not None:
+        # Draw reverse power-up if it's on the screen and enabled
+        if ENABLE_REVERSE_CONTROLS and reverse_foodx is not None and reverse_foody is not None:
             pygame.draw.rect(dis, PURPLE, [reverse_foodx, reverse_foody, snake_block, snake_block])
+
+        # Draw speed power-up if it's on the screen and enabled
+        if ENABLE_SPEED_POWERUPS and speed_powerupx is not None and speed_powerupy is not None:
+            color = RED if speed_type == "boost" else CYAN
+            pygame.draw.rect(dis, color, [speed_powerupx, speed_powerupy, snake_block, snake_block])
+
+        # Display notification for speed power-up
+        if notification_text:
+            display_notification(notification_text)
 
         # Update snake
         snake_Head = [x1, y1]
         snake_List.append(snake_Head)
         if len(snake_List) > Length_of_snake:
             del snake_List[0]
+
+        # Check if snake eats regular food
+        if x1 == foodx and y1 == foody:
+            foodx, foody = spawn_item()
+            Length_of_snake += 1
+
+        # Check if snake eats reverse power-up
+        if ENABLE_REVERSE_CONTROLS and reverse_foodx is not None and reverse_foody is not None and x1 == reverse_foodx and y1 == reverse_foody:
+            reverse_controls = True
+            reverse_start_time = time.time()  # Start reverse control timer
+            reverse_foodx, reverse_foody = None, None  # Hide the reverse power-up until respawn
+
+        # Check if snake eats speed power-up
+        if ENABLE_SPEED_POWERUPS and speed_powerupx is not None and speed_powerupy is not None and x1 == speed_powerupx and y1 == speed_powerupy:
+            speed_effect_start_time = time.time()
+            if speed_type == "boost":
+                snake_speed += 5
+                speed_boost_active = True
+                notification_text = "Speed Boost Active!"
+            elif speed_type == "slowdown":
+                snake_speed -= 5
+                speed_slowdown_active = True
+                notification_text = "Speed Slowdown Active!"
+            speed_powerupx, speed_powerupy = None, None  # Hide the speed power-up until respawn
 
         # Handle self-collision in Endless Mode
         if snake_Head in snake_List[:-1] and ENDLESS_MODE:
@@ -244,17 +333,6 @@ def gameLoop():
         your_score(Length_of_snake - 1)
         display_high_score(high_score)
         pygame.display.update()
-
-        # Check if snake eats regular food
-        if x1 == foodx and y1 == foody:
-            foodx, foody = spawn_item()
-            Length_of_snake += 1
-
-        # Check if snake eats reverse power-up
-        if reverse_foodx is not None and reverse_foody is not None and x1 == reverse_foodx and y1 == reverse_foody:
-            reverse_controls = True
-            reverse_start_time = time.time()  # Start reverse control timer
-            reverse_foodx, reverse_foody = None, None  # Hide the reverse power-up until respawn
 
         clock.tick(snake_speed)
 
