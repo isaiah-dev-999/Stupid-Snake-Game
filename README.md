@@ -70,4 +70,3 @@ Contributions are welcome! If you'd like to contribute, feel free to fork the pr
 
 ---
 
-This README should clearly indicate that the game is under active development. Let me know if you’d like any more adjustments!
